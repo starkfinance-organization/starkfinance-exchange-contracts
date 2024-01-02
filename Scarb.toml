@@ -1,0 +1,29 @@
+[package]
+name = "starkfinance"
+version = "0.1.0"
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+sierra = true
+casm = true
+
+[dependencies]
+starknet = "2.3.1"
+rules_account = { git = "https://github.com/ruleslabs/starknet-rules-account.git" }
+
+[tool.snforge]
+exit_first = true
+
+[scripts]
+devnet = "docker-compose up -d"
+
+[tool.sncast.testnet]
+name="testnet"
+account = "./accounts/testnet_deployer.json"
+keystore = "./accounts/testnet_deployer_key.json"
+url = "https://starknet-goerli.infura.io/v3/${INFURA_PROJECT_ID}"
+
+[tool.sncast.mainnet]
+account = "mainnet"
+accounts-file = "./accounts/mainnet_deployer.json"
+url = "https://starknet-mainnet.infura.io/v3/${INFURA_PROJECT_ID}"

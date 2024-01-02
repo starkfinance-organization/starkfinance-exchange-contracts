@@ -1,0 +1,26 @@
+.DS_Store
+.temp/
+.vscode
+
+node_modules
+.env
+.docker
+.protostar_cache
+coverage
+coverage.json
+typechain
+*.account
+accounts
+build/
+dist/
+target/
+*.log
+
+#Hardhat files
+cache
+artifacts
+venv
+
+starknet-artifacts
+scripts
+.snfoundry_cache
