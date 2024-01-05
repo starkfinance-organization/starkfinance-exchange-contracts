@@ -113,7 +113,7 @@ mod StarkFinanceRouter {
                 amountAMin,
                 amountBMin
             );
-            let pair = InternalFunctions::_pair_for(factory, tokenA, tokenB, stable, feeTier);
+            let pair = InternalFunctions::_pair_for(factory, tokenA, tokenB);
             let sender = get_caller_address();
 
             InternalFunctions::_transfer_token_from(tokenA, sender, pair, amountA);
@@ -138,8 +138,6 @@ mod StarkFinanceRouter {
             ref self: ContractState,
             tokenA: ContractAddress,
             tokenB: ContractAddress,
-            stable: bool,
-            feeTier: u8,
             liquidity: u256,
             amountAMin: u256,
             amountBMin: u256,
@@ -149,7 +147,7 @@ mod StarkFinanceRouter {
             Modifiers::_ensure(deadline);
             let factory = self._factory.read();
 
-            let pair = InternalFunctions::_pair_for(factory, tokenA, tokenB, stable, feeTier);
+            let pair = InternalFunctions::_pair_for(factory, tokenA, tokenB);
             let sender = get_caller_address();
 
             InternalFunctions::_transfer_token_from(pair, sender, pair, liquidity);
@@ -195,7 +193,7 @@ mod StarkFinanceRouter {
             let _route = _path.pop_front().unwrap();
 
             let pair = InternalFunctions::_pair_for(
-                factory, _route.tokenIn, _route.tokenOut, _route.stable, _route.feeTier
+                factory, _route.tokenIn, _route.tokenOut
             );
             let sender = get_caller_address();
 
@@ -224,7 +222,7 @@ mod StarkFinanceRouter {
             let _route = _path.pop_front().unwrap();
             let factory = self._factory.read();
             let pair = InternalFunctions::_pair_for(
-                factory, _route.tokenIn, _route.tokenOut, _route.stable, _route.feeTier
+                factory, _route.tokenIn, _route.tokenOut
             );
             let sender = get_caller_address();
 
@@ -316,14 +314,14 @@ mod StarkFinanceRouter {
             let factory = self._factory.read();
             let factoryDispatcher = IStarkFinanceFactoryABIDispatcher { contract_address: factory };
 
-            let pair = factoryDispatcher.get_pair(tokenA, tokenB, stable, feeTier);
+            let pair = factoryDispatcher.get_pair(tokenA, tokenB);
 
             if (pair == contract_address_const::<0>()) {
                 factoryDispatcher.create_pair(tokenA, tokenB, stable, feeTier);
             }
 
             let (reserveA, reserveB) = InternalFunctions::_get_reserves(
-                factory, tokenA, tokenB, stable, feeTier
+                factory, tokenA, tokenB
             );
 
             if (reserveA == 0 && reserveB == 0) {
@@ -386,7 +384,7 @@ mod StarkFinanceRouter {
                             let _next: SwapPath = *path[index + 1];
 
                             InternalFunctions::_pair_for(
-                                factory, _next.tokenIn, _next.tokenOut, _next.stable, _next.feeTier
+                                factory, _next.tokenIn, _next.tokenOut,
                             )
                         } else {
                             _to
@@ -397,8 +395,6 @@ mod StarkFinanceRouter {
                                 factory,
                                 *route.tokenIn,
                                 *route.tokenOut,
-                                *route.stable,
-                                *route.feeTier
                             )
                         }.swap(amount0Out, amount1Out, to, ArrayTrait::<felt252>::new());
 
@@ -433,13 +429,13 @@ mod StarkFinanceRouter {
                             *route.tokenIn, *route.tokenOut
                         );
                         let pair = InternalFunctions::_pair_for(
-                            factory, *route.tokenIn, *route.tokenOut, *route.stable, *route.feeTier
+                            factory, *route.tokenIn, *route.tokenOut
                         );
 
                         let pairDispatcher = IStarkFinancePairDispatcher { contract_address: pair };
 
                         let (reserveA, _) = InternalFunctions::_get_reserves(
-                            factory, *route.tokenIn, *route.tokenOut, *route.stable, *route.feeTier
+                            factory, *route.tokenIn, *route.tokenOut
                         );
 
                         let balance_tokenIn = InternalFunctions::_balance_of(*route.tokenIn, pair);
@@ -456,7 +452,7 @@ mod StarkFinanceRouter {
                         let to = if index < path.len() - 1 {
                             let _next: SwapPath = *path[index + 1];
                             InternalFunctions::_pair_for(
-                                factory, _next.tokenIn, _next.tokenOut, _next.stable, _next.feeTier
+                                factory, _next.tokenIn, _next.tokenOut
                             )
                         } else {
                             _to
@@ -478,24 +474,20 @@ mod StarkFinanceRouter {
             factory: ContractAddress,
             tokenA: ContractAddress,
             tokenB: ContractAddress,
-            stable: bool,
-            feeTier: u8
         ) -> ContractAddress {
             let (token0, token1) = InternalFunctions::_sort_tokens(tokenA, tokenB);
             IStarkFinanceFactoryABIDispatcher {
                 contract_address: factory
-            }.get_pair(token0, token1, stable, feeTier)
+            }.get_pair(token0, token1)
         }
 
         fn _get_reserves(
             factory: ContractAddress,
             tokenA: ContractAddress,
             tokenB: ContractAddress,
-            stable: bool,
-            feeTier: u8
         ) -> (u256, u256) {
             let (token0, _) = InternalFunctions::_sort_tokens(tokenA, tokenB);
-            let pair = InternalFunctions::_pair_for(factory, tokenA, tokenB, stable, feeTier);
+            let pair = InternalFunctions::_pair_for(factory, tokenA, tokenB);
             let (reserve0, reserve1, _) = IStarkFinancePairDispatcher {
                 contract_address: pair
             }.get_reserves();
@@ -529,7 +521,7 @@ mod StarkFinanceRouter {
                 match _path.pop_front() {
                     Option::Some(route) => {
                         let pair = InternalFunctions::_pair_for(
-                            factory, *route.tokenIn, *route.tokenOut, *route.stable, *route.feeTier
+                            factory, *route.tokenIn, *route.tokenOut
                         );
                         let factoryDispatcher = IStarkFinanceFactoryABIDispatcher {
                             contract_address: factory

@@ -9,8 +9,6 @@ trait IStarkFinanceFactory<TContractState> {
         self: @TContractState,
         tokenA: ContractAddress,
         tokenB: ContractAddress,
-        stable: bool,
-        fee: u8
     ) -> ContractAddress;
     fn get_fees(self: @TContractState) -> (u8, u8);
     fn protocol_fee_on(self: @TContractState) -> bool;
@@ -43,8 +41,6 @@ trait IStarkFinanceFactoryABI<TContractState> {
         self: @TContractState,
         tokenA: ContractAddress,
         tokenB: ContractAddress,
-        stable: bool,
-        fee: u8
     ) -> ContractAddress;
     fn get_fees(self: @TContractState) -> (u8, u8);
     fn protocol_fee_on(self: @TContractState) -> bool;

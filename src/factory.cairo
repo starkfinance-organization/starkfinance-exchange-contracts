@@ -46,7 +46,6 @@ mod StarkFinanceFactory {
     use starkfinance::utils::partial_ord_contract_address::{ContractAddressPartialOrd};
     use starkfinance::utils::upgradable::{Upgradable, IUpgradable};
     
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -64,7 +63,6 @@ mod StarkFinanceFactory {
         tokenB: ContractAddress,
         pair: ContractAddress,
         pair_count: u32,
-        stable: bool,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -92,7 +90,7 @@ mod StarkFinanceFactory {
         fees: Fees,
         paused: bool,
         protocol_fee_on: bool,
-        _pair: LegacyMap::<(ContractAddress, ContractAddress, bool, u8), ContractAddress>,
+        _pair: LegacyMap::<(ContractAddress, ContractAddress), (ContractAddress, bool, u8)>,
         _all_pairs: LegacyMap::<u32, ContractAddress>,
         valid_pairs: LegacyMap::<ContractAddress, ValidPair>,
         _all_pairs_length: u32,
@@ -146,11 +144,9 @@ mod StarkFinanceFactory {
             self: @ContractState,
             tokenA: ContractAddress,
             tokenB: ContractAddress,
-            stable: bool,
-            fee: u8
         ) -> ContractAddress {
             let (token0, token1) = self.sort_tokens(tokenA, tokenB);
-            let pair = self._pair.read((token0, token1, stable, fee));
+            let (pair,_,_) = self._pair.read((token0, token1));
             pair
         }
 
@@ -236,7 +232,7 @@ mod StarkFinanceFactory {
             let config = self.config.read();
             let vault_class_hash = config.vault_class_hash;
 
-            let found_pair = self.get_pair(tokenA, tokenB, stable, fee);
+            let found_pair = self.get_pair(tokenA, tokenB);
             assert(found_pair.is_zero(), 'pair exists');
 
             let (token0, token1) = self.sort_tokens(tokenA, tokenB);
@@ -248,18 +244,8 @@ mod StarkFinanceFactory {
             Serde::serialize(@fee, ref pair_constructor_calldata);
             Serde::serialize(@vault_class_hash, ref pair_constructor_calldata);
 
-            let token0_felt252 = contract_address_to_felt252(token0)
-                + if (fee > 0) {
-                    fee.into()
-                } else {
-                    0
-                };
-            let token1_stable_felt252 = contract_address_to_felt252(token1)
-                + if stable {
-                    1
-                } else {
-                    0
-                }; // add stable bool as well since pedersen takes 2 args
+            let token0_felt252 = contract_address_to_felt252(token0);
+            let token1_stable_felt252 = contract_address_to_felt252(token1);
 
             let address_salt = pedersen(token0_felt252, token1_stable_felt252);
 
@@ -268,7 +254,7 @@ mod StarkFinanceFactory {
             )
                 .unwrap(); // deploy_syscall never panics
 
-            self._pair.write((token0, token1, stable, fee), pair);
+            self._pair.write((token0, token1), (pair, stable, fee));
             let pair_count = self._all_pairs_length.read();
             self._all_pairs.write(pair_count, pair);
             self
@@ -279,7 +265,7 @@ mod StarkFinanceFactory {
             self
                 .emit(
                     PairCreated {
-                        tokenA: token0, tokenB: token1, pair, pair_count: pair_count + 1, stable
+                        tokenA: token0, tokenB: token1, pair, pair_count: pair_count + 1
                     }
                 );
 
